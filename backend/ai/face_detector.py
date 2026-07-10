@@ -1,11 +1,12 @@
 import cv2
-import mediapipe as mp
 import os
-
-mp_face = mp.solutions.face_detection
 
 FACE_FOLDER = "ai/faces"
 os.makedirs(FACE_FOLDER, exist_ok=True)
+
+cascade = cv2.CascadeClassifier(
+    cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
+)
 
 
 def detect_face(image_path):
@@ -14,32 +15,23 @@ def detect_face(image_path):
     if image is None:
         return None
 
-    rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
-    with mp_face.FaceDetection(
-        model_selection=1,
-        min_detection_confidence=0.5
-    ) as detector:
+    faces = cascade.detectMultiScale(
+        gray,
+        scaleFactor=1.1,
+        minNeighbors=5,
+        minSize=(100, 100)
+    )
 
-        results = detector.process(rgb)
+    if len(faces) == 0:
+        return None
 
-        if not results.detections:
-            return None
+    x, y, w, h = faces[0]
 
-        detection = results.detections[0]
+    face = image[y:y+h, x:x+w]
 
-        bbox = detection.location_data.relative_bounding_box
+    save_path = os.path.join(FACE_FOLDER, "face.jpg")
+    cv2.imwrite(save_path, face)
 
-        h, w, _ = image.shape
-
-        x = max(int(bbox.xmin * w), 0)
-        y = max(int(bbox.ymin * h), 0)
-        width = int(bbox.width * w)
-        height = int(bbox.height * h)
-
-        face = image[y:y + height, x:x + width]
-
-        save_path = os.path.join(FACE_FOLDER, "face.jpg")
-        cv2.imwrite(save_path, face)
-
-        return save_path
+    return save_path
