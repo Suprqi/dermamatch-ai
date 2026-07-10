@@ -1,4 +1,4 @@
-const API_URL = "http://127.0.0.1:8000";
+const API_URL = "https://dermamatch-ai.onrender.com";
 
 export async function analyzeFace(file) {
   const formData = new FormData();
